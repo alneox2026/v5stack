@@ -1,0 +1,11 @@
+agents:
+  maximusv5:
+    agent_id: maximusv5
+    backend: cloud_run_adk
+    base_url: https://maxima-cloudrun-stream-v5-281577273798.us-central1.run.app
+    app_name: app
+    region: us-central1
+    streaming_enabled: true
+    persistence_enabled: true
+    auth_policy: firebase
+    runtime_session_cleanup: cloud_run_adk
