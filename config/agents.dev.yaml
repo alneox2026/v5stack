@@ -2,6 +2,7 @@ agents:
   maximusv5:
     agent_id: maximusv5
     backend: cloud_run_adk
+    model: gemini-3.8-flash
     base_url: https://maxima-cloudrun-stream-v5-281577273798.us-central1.run.app
     app_name: app
     region: us-central1

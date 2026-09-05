@@ -11,6 +11,12 @@ import yaml
 
 
 DEFAULT_MODEL_PRICING: dict[str, dict[str, Any]] = {
+    "gemini-3.8-flash": {
+        "pricing_version": "gemini-3.8-flash-usd-on-demand-2026-08-24",
+        "input_text_image_video": 0.75,
+        "input_audio": 1.50,
+        "output_including_thinking": 3.75,
+    },
     "gemini-3.7-flash": {
         "pricing_version": "gemini-3.7-flash-usd-on-demand-2026-08-24",
         "input_text_image_video": 0.75,
@@ -48,7 +54,7 @@ DEFAULT_MODEL_PRICING: dict[str, dict[str, Any]] = {
         "output_including_thinking": 5.00,
     },
 }
-DEFAULT_MODEL_NAME = "gemini-2.5-flash"
+DEFAULT_MODEL_NAME = os.getenv("DEFAULT_MODEL_NAME", "gemini-2.5-flash")
 
 _USAGE_KEYS = ("usage_metadata", "usageMetadata")
 
@@ -57,13 +63,16 @@ _USAGE_KEYS = ("usage_metadata", "usageMetadata")
 def _load_models_from_yaml_catalog() -> dict[str, dict[str, Any]]:
     """Dynamically load model rates from billing YAML catalog files if available."""
     catalog: dict[str, dict[str, Any]] = {}
-    search_paths = [
-        os.getenv("BILLING_CATALOG_PATH"),
-        "config/billing.prod.yaml",
-        "config/billing.test.yaml",
-        "/app/config/billing.prod.yaml",
-        "/app/config/billing.test.yaml",
-    ]
+    custom_path = os.getenv("BILLING_CATALOG_PATH")
+    if custom_path:
+        search_paths = [custom_path]
+    else:
+        search_paths = [
+            "config/billing.prod.yaml",
+            "config/billing.test.yaml",
+            "/app/config/billing.prod.yaml",
+            "/app/config/billing.test.yaml",
+        ]
     for path_str in search_paths:
         if not path_str:
             continue
@@ -102,6 +111,8 @@ def _load_models_from_yaml_catalog() -> dict[str, dict[str, Any]]:
                                 "input_audio": audio_usd,
                                 "output_including_thinking": output_usd,
                             }
+                    if catalog:
+                        break
         except Exception:
             pass
     return catalog
@@ -114,8 +125,18 @@ def resolve_model_pricing(raw_model: str | None = None) -> tuple[str, dict[str, 
     active_catalog.update(yaml_catalog)
 
     if not raw_model:
+        env_default = os.getenv("DEFAULT_MODEL_NAME")
+        if env_default:
+            cleaned_env = env_default.strip().lower()
+            if cleaned_env in active_catalog:
+                return cleaned_env, active_catalog[cleaned_env]
+        # If a custom billing catalog exists and DEFAULT_MODEL_NAME is not in it,
+        # prefer the first model declared in the custom catalog.
+        if yaml_catalog and DEFAULT_MODEL_NAME not in yaml_catalog:
+            catalog_first_model = next(iter(yaml_catalog.keys()))
+            return catalog_first_model, yaml_catalog[catalog_first_model]
         return DEFAULT_MODEL_NAME, active_catalog.get(
-            DEFAULT_MODEL_NAME, DEFAULT_MODEL_PRICING[DEFAULT_MODEL_NAME]
+            DEFAULT_MODEL_NAME, DEFAULT_MODEL_PRICING.get(DEFAULT_MODEL_NAME, {})
         )
 
     cleaned = str(raw_model).strip().lower()
