@@ -26,15 +26,6 @@ monthly_service_fee:
   interval: month
 
 models:
-  gemini-3.7-flash:
-    input_usd_per_million: 0.75
-    output_usd_per_million: 3.75
   gemini-3.8-flash:
     input_usd_per_million: 0.75
     output_usd_per_million: 3.75
-  gemini-3.5-flash:
-    input_usd_per_million: 1.50
-    output_usd_per_million: 9.00
-  gemini-2.5-flash:
-    input_usd_per_million: 0.30
-    output_usd_per_million: 2.50
